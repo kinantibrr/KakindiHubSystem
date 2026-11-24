@@ -99,8 +99,6 @@ griya-kakindi-system/
 ├── backend/
 │   └── schema.sql
 ├── frontend/
-│   ├── ASSETS/
-│   │   └── logo-kakindi.png
 │   ├── CSS/
 │   │   └── style.css
 │   ├── HTML/
@@ -108,7 +106,6 @@ griya-kakindi-system/
 │   └── JS/
 │       ├── app.js
 │       ├── config.js
-│       └── dummy_data.js
 └── README.md
 ```
 
@@ -124,9 +121,9 @@ griya-kakindi-system/
    * Buka **Settings > Pages**, pilih *branch* utama (misalnya `main`), simpan, lalu tunggu hingga tautan GitHub Pages aktif.
 
 ### Informasi Uji Sistem
-* **Repository GitHub:** `[tempel link repository GitHub]`
-* **Web Apps (GitHub Pages):** `[tempel link web aplikasi]`
-* **Akun Uji Pemilik (Owner):** `owner_kakindi` / `kakindi2026` *(sesuaikan dengan `frontend/JS/config.js`)*
+* **Repository GitHub:** `https://github.com/kinantibrr/kakindikostsystem/tree/main`
+* **Web Apps (GitHub Pages):** `file:///D:/KULIAH/SMT%205/KODE/griya-kakindi-system/frontend/HTML/index.html`
+* **Akun Uji Pemilik (Owner):** `owner_kakindi` / `kakindi2026`
 
 ### Skenario Uji
 1. Buka tautan aplikasi dan login menggunakan akun pemilik (`Owner`); pastikan penghuni/pengguna tanpa kredensial tidak dapat masuk.
