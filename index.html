@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Owner Portal — Kakindi Griya</title>
+  <link rel="stylesheet" href="../CSS/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- ==========================================
+       HALAMAN 1: LOGIN KHUSUS PEMILIK (OWNER)
+       ========================================== -->
+  <section id="login-screen" class="login-wrapper no-print">
+    <div class="login-card">
+      <div class="login-logo-box" id="login-logo-container"></div>
+      <h2>Kakindi Griya</h2>
+      <p class="login-subtitle">Sistem Manajemen & Keuangan Khusus Pemilik</p>
+
+      <form id="form-login">
+        <div class="input-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" placeholder="Masukkan username pemilik" required />
+        </div>
+        <div class="input-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Masukkan password" required />
+        </div>
+        <p id="login-error" class="error-text hidden">Username atau password salah!</p>
+        <button type="submit" class="btn btn-primary full-btn">Masuk ke Dashboard</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       HALAMAN 2: DASHBOARD & WORKSPACE PEMILIK
+       ========================================== -->
+  <div id="app-screen" class="app-layout hidden no-print">
+
+    <!-- AREA UTAMA (KIRI & TENGAH) -->
+    <div class="main-workspace">
+      <!-- Header Atas: Logo & Nama + Filter Periode (Hanya tampil di Dashboard) -->
+      <header class="top-header">
+        <div class="brand-header">
+          <div class="header-logo" id="header-logo-container"></div>
+          <div>
+            <h1>KAKINDI GRIYA</h1>
+            <span>Owner Executive Dashboard <small id="data-source-badge" class="mode-badge"></small></span>
+          </div>
+        </div>
+
+        <div id="dashboard-period-filter" class="period-filter-box">
+          <label>Periode Laporan:</label>
+          <select id="filter-tipe-periode" onchange="toggleSelectBulan(); muatDashboard();">
+            <option value="bulanan">Per Bulan</option>
+            <option value="tahunan" selected>Per Tahun</option>
+          </select>
+          <select id="filter-bulan" class="hidden" onchange="muatDashboard()">
+            <option value="1">Januari</option>
+            <option value="2">Februari</option>
+            <option value="3">Maret</option>
+            <option value="4">April</option>
+            <option value="5">Mei</option>
+            <option value="6">Juni</option>
+            <option value="7">Juli</option>
+            <option value="8">Agustus</option>
+            <option value="9">September</option>
+            <option value="10">Oktober</option>
+            <option value="11" selected>November</option>
+            <option value="12">Desember</option>
+          </select>
+          <select id="filter-tahun" onchange="muatDashboard()"></select>
+        </div>
+      </header>
+
+      <!-- VIEW 1: DASHBOARD UTAMA -->
+      <div id="view-dashboard" class="view-section">
+        <div class="dashboard-grid">
+          <div class="dash-left">
+            <!-- INCOME PER CABANG -->
+            <div class="panel-card">
+              <div class="panel-title">
+                <h3>INCOME <small id="label-periode-income"></small></h3>
+              </div>
+              <div id="list-income-cabang" class="summary-rows"></div>
+            </div>
+
+            <!-- EXPENSE -->
+            <div class="panel-card">
+              <div class="panel-title">
+                <h3>EXPENSE <small id="label-periode-expense"></small></h3>
+              </div>
+              <div id="list-expense-kategori" class="summary-rows"></div>
+            </div>
+
+            <!-- ROOM AVAILABLE + FILTER RENTANG TANGGAL -->
+            <div class="panel-card">
+              <div class="panel-title room-header">
+                <h3>ROOM AVAILABLE</h3>
+                <div class="date-range-filter">
+                  <input type="date" id="avail-start" onchange="renderRoomAvailable()" title="Dari tanggal" />
+                  <span>s/d</span>
+                  <input type="date" id="avail-end" onchange="renderRoomAvailable()" title="Sampai tanggal" />
+                </div>
+              </div>
+              <div id="room-available-columns" class="room-columns"></div>
+            </div>
+          </div>
+
+          <!-- KOLOM KANAN: GRAFIK NET INCOME -->
+          <div class="dash-right">
+            <div class="panel-card chart-panel">
+              <div class="panel-title">
+                <h3>NET INCOME</h3>
+                <span class="year-pill" id="chart-year-label">2026</span>
+              </div>
+              <div class="net-highlight">
+                <span>Total Net Income Periode Terpilih:</span>
+                <strong id="total-net-income-display">Rp0,00</strong>
+              </div>
+              <div class="chart-container">
+                <canvas id="netIncomeChart"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 2: PROSES PENYEWAAN & PEMBUATAN KUITANSI -->
+      <div id="view-kuitansi" class="view-section hidden">
+        <div class="panel-card">
+          <div class="panel-title">
+            <h3>Proses Penyewaan & Pembuatan Kuitansi Otomatis</h3>
+          </div>
+          <form id="form-transaksi" class="form-grid">
+            <div>
+              <label>Pilih Unit Tersedia</label>
+              <select id="select_unit" onchange="hitungTotal()" required></select>
+            </div>
+            <div>
+              <label>Nama Lengkap Penyewa</label>
+              <input type="text" id="nama_lengkap" placeholder="Contoh: Diarsa Pandham Pawestri" required />
+            </div>
+            <div>
+              <label>No. WhatsApp / Telepon</label>
+              <input type="text" id="no_telepon" placeholder="0812xxxx" />
+            </div>
+            <div>
+              <label>Tanggal Bayar</label>
+              <input type="date" id="tgl_bayar" required />
+            </div>
+            <div>
+              <label>Tanggal Mulai Sewa</label>
+              <input type="date" id="periode_mulai" onchange="hitungTanggalSelesai()" required />
+            </div>
+            <div>
+              <label>Durasi Sewa (Bulan)</label>
+              <input type="number" id="durasi_bulan" value="1" min="1" onchange="hitungTanggalSelesai(); hitungTotal();" required />
+            </div>
+            <div>
+              <label>Tanggal Selesai Sewa</label>
+              <input type="date" id="periode_selesai" required />
+            </div>
+            <div>
+              <label>Nominal Pembayaran (Rp)</label>
+              <input type="number" id="nominal" required />
+            </div>
+            <div>
+              <label>Penerima</label>
+              <input type="text" id="penerima" value="Ayi Setiowartini" required />
+            </div>
+            <div class="full-width">
+              <button type="submit" class="btn btn-primary">Simpan & Terbitkan Kuitansi</button>
+            </div>
+          </form>
+
+          <h4 class="sub-heading">Riwayat Kuitansi Pembayaran</h4>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>No. Kuitansi</th>
+                  <th>Tanggal</th>
+                  <th>Penyewa</th>
+                  <th>Cabang / Unit</th>
+                  <th>Nominal</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="tabel-pembayaran-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: ADD PROPERTI / CABANG & KAMAR -->
+      <div id="view-properti" class="view-section hidden">
+        <div id="properti-cabang-container" class="properti-stack"></div>
+
+        <!-- Tombol '+' Kanan Bawah untuk Membuka Pop-up Tambah Properti -->
+        <button class="fab-add-btn" onclick="bukaModalTambahProperti()" title="Tambah Properti / Cabang Baru">+</button>
+      </div>
+
+      <!-- VIEW 4: STATISTIKA PER CABANG -->
+      <div id="view-statistika" class="view-section hidden">
+        <div class="panel-card" style="margin-bottom: 18px;">
+          <div class="panel-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">
+            <h3>STATISTIKA PER CABANG</h3>
+            <div class="period-filter-box">
+              <label for="stat-filter-tahun">YEAR</label>
+              <select id="stat-filter-tahun" onchange="renderStatistikaCharts()"></select>
+            </div>
+          </div>
+        </div>
+
+        <div id="statistika-cabang-container" class="properti-stack"></div>
+      </div>
+
+      <!-- VIEW 5: PENCATATAN PENGELUARAN -->
+      <div id="view-pengeluaran" class="view-section hidden">
+        <div class="panel-card">
+          <div class="panel-title">
+            <h3>Pencatatan Pengeluaran</h3>
+          </div>
+          <form id="form-pengeluaran" class="form-grid">
+            <div>
+              <label>Tanggal Pengeluaran</label>
+              <input type="date" id="exp_tanggal" required />
+            </div>
+            <div>
+              <label>Cabang Terkait</label>
+              <select id="exp_cabang" required>
+                <option value="Kakindi Griya 1">Kakindi Griya 1</option>
+                <option value="Kakindi Griya 2">Kakindi Griya 2</option>
+                <option value="Kakindi Kost">Kakindi Kost</option>
+                <option value="Umum">Umum / Operasional Pusat</option>
+              </select>
+            </div>
+            <div>
+              <label>Kategori Beban</label>
+              <select id="exp_kategori" required>
+                <option value="Electricity">Electricity (Listrik)</option>
+                <option value="Water">Water (Air / PDAM)</option>
+                <option value="Perawatan">Perawatan & Perbaikan</option>
+                <option value="Lain-lain">Lain-lain</option>
+              </select>
+            </div>
+            <div>
+              <label>Nominal Pengeluaran (Rp)</label>
+              <input type="number" id="exp_nominal" placeholder="500000" required />
+            </div>
+            <div class="full-width">
+              <label>Keterangan Detail</label>
+              <input type="text" id="exp_keterangan" placeholder="Contoh: Token listrik bulan November" required />
+            </div>
+            <div class="full-width">
+              <button type="submit" class="btn btn-primary">Simpan Pengeluaran</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- VIEW 6: JURNAL KEUANGAN -->
+      <div id="view-jurnal" class="view-section hidden">
+        <div class="panel-card">
+          <div class="panel-title">
+            <h3>Jurnal Keuangan</h3>
+          </div>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tanggal</th>
+                  <th>Cabang</th>
+                  <th>Jenis</th>
+                  <th>Akun</th>
+                  <th>Keterangan</th>
+                  <th>Debit (Masuk)</th>
+                  <th>Kredit (Keluar)</th>
+                </tr>
+              </thead>
+              <tbody id="tabel-jurnal-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR MENU KANAN -->
+    <aside class="right-sidebar">
+      <button class="nav-icon-btn active" data-target="view-dashboard" onclick="bukaMenu('view-dashboard', this)" title="Dashboard Utama">
+        <span class="icon">📊</span>
+        <span class="label">Dashboard</span>
+      </button>
+      <button class="nav-icon-btn" data-target="view-kuitansi" onclick="bukaMenu('view-kuitansi', this)" title="Sewa & Kuitansi">
+        <span class="icon">🧾</span>
+        <span class="label">Kuitansi</span>
+      </button>
+      <button class="nav-icon-btn" data-target="view-properti" onclick="bukaMenu('view-properti', this)" title="Tambah Properti & Kamar">
+        <span class="icon">🏠+</span>
+        <span class="label">Add Properti</span>
+      </button>
+      <button class="nav-icon-btn" data-target="view-statistika" onclick="bukaMenu('view-statistika', this)" title="Statistika Cabang">
+        <span class="icon">📈</span>
+        <span class="label">Statistika</span>
+      </button>
+      <button class="nav-icon-btn" data-target="view-pengeluaran" onclick="bukaMenu('view-pengeluaran', this)" title="Catat Pengeluaran">
+        <span class="icon">💸</span>
+        <span class="label">Pengeluaran</span>
+      </button>
+      <button class="nav-icon-btn" data-target="view-jurnal" onclick="bukaMenu('view-jurnal', this)" title="Jurnal Keuangan">
+        <span class="icon">📒</span>
+        <span class="label">Jurnal</span>
+      </button>
+      <button class="nav-icon-btn logout-btn" onclick="resetDummyData()" title="Reset ke Data Dummy Awal">
+        <span class="icon">🔄</span>
+        <span class="label">Reset Data</span>
+      </button>
+      <button class="nav-icon-btn logout-btn" style="margin-top:0;" onclick="logoutOwner()" title="Keluar (Log Out)">
+        <span class="icon">🚪</span>
+        <span class="label">Log Out</span>
+      </button>
+    </aside>
+  </div>
+
+  <!-- MODAL CETAK KUITANSI OTOMATIS -->
+  <div id="modal-kuitansi" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-actions no-print">
+        <button class="btn btn-primary" onclick="window.print()">Cetak / Simpan PDF</button>
+        <button class="btn btn-danger" onclick="tutupModal()">Tutup</button>
+      </div>
+      <div id="area-kuitansi" class="kuitansi-paper"></div>
+    </div>
+  </div>
+
+  <!-- MODAL POP-UP TAMBAH PROPERTI / CABANG BARU (TOMBOL '+') -->
+  <div id="modal-tambah-properti" class="modal hidden no-print">
+    <div class="modal-content" style="max-width: 560px;">
+      <div class="panel-title">
+        <h3>Tambah Properti / Cabang Baru</h3>
+        <button class="btn btn-danger" onclick="tutupModalProperti()">✕</button>
+      </div>
+      <form id="form-properti" class="form-grid" style="margin-bottom: 0;">
+        <div class="full-width">
+          <label>Pilih Cabang atau Ketik Cabang Baru</label>
+          <input type="text" id="prop_cabang" list="daftar-cabang-list" placeholder="Contoh: Kakindi Griya 3" required />
+          <datalist id="daftar-cabang-list">
+            <option value="Kakindi Griya 1">
+            <option value="Kakindi Griya 2">
+            <option value="Kakindi Kost">
+          </datalist>
+        </div>
+        <div>
+          <label>Jenis Hunian (Format Kuitansi)</label>
+          <select id="prop_jenis" required>
+            <option value="Kontrakan Non-Mezzanine">Kontrakan Reguler (Kuitansi Kakindi Griya)</option>
+            <option value="Kontrakan Mezzanine">Kontrakan Mezzanine (Kuitansi Kakindi Griya)</option>
+            <option value="Kost">Kost (Kuitansi Kakindi Kost)</option>
+          </select>
+        </div>
+        <div>
+          <label>Harga Sewa per Bulan (Rp)</label>
+          <input type="number" id="prop_harga" placeholder="2500000" required />
+        </div>
+        <div class="full-width">
+          <label>Nomor Kamar (Pisahkan dengan koma jika banyak)</label>
+          <input type="text" id="prop_kamar" placeholder="Contoh: 301, 302, 303" required />
+        </div>
+        <div class="full-width" style="display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="tutupModalProperti()">Batal</button>
+          <button type="submit" class="btn btn-primary">+ Simpan Properti & Kamar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL POP-UP EDIT PROPERTI (DARI MENU TITIK 3 '⋮') -->
+  <div id="modal-edit-properti" class="modal hidden no-print">
+    <div class="modal-content" style="max-width: 680px;">
+      <div class="panel-title">
+        <h3 id="edit-prop-modal-title">Edit Properti</h3>
+        <button class="btn btn-danger" onclick="tutupModalEditProperti()">✕</button>
+      </div>
+
+      <form id="form-edit-properti" class="form-grid">
+        <input type="hidden" id="edit_cabang_lama" />
+        <div>
+          <label>Nama Cabang</label>
+          <input type="text" id="edit_cabang_baru" required />
+        </div>
+        <div>
+          <label>Jenis Hunian</label>
+          <select id="edit_jenis_hunian" required>
+            <option value="Kontrakan Non-Mezzanine">Kontrakan Non-Mezzanine</option>
+            <option value="Kontrakan Mezzanine">Kontrakan Mezzanine</option>
+            <option value="Kost">Kost</option>
+          </select>
+        </div>
+        <div>
+          <label>Harga Bulanan Default (Rp)</label>
+          <input type="number" id="edit_harga_bulanan" required />
+        </div>
+        <div>
+          <label>Tambah Kamar Baru (Opsional, pisahkan koma)</label>
+          <input type="text" id="edit_tambah_kamar" placeholder="Contoh: 204, 205" />
+        </div>
+        <div class="full-width" style="display: flex; justify-content: flex-end;">
+          <button type="submit" class="btn btn-primary">Simpan Perubahan Properti</button>
+        </div>
+      </form>
+
+      <h4 class="sub-heading">Daftar Kamar di Properti Ini</h4>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>No. Kamar</th>
+              <th>Harga / Bulan</th>
+              <th>Status</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="edit-prop-kamar-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="../JS/config.js"></script>
+  <script src="../JS/dummy_data.js"></script>
+  <script src="../JS/app.js"></script>
+</body>
+</html>
